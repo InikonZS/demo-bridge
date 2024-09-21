@@ -1,4 +1,76 @@
 import { IVector } from "../core/IVector";
+import { solveCutted } from "../core/linear";
+
+function rotate(v: IVector, ang: number){
+    return {x: v.x * Math.cos(ang) + v.y * Math.sin(ang), y: v.y * Math.cos(ang) - v.x * Math.sin(ang)}
+}
+
+const getNormal = (v1: IVector, v2: IVector)=>{
+    const len = Math.hypot(v1.x - v2.x, v1.y - v2.y)
+    const v = {
+        x: (v1.x - v2.x) / len,
+        y: (v1.y - v2.y) / len
+    };
+    return rotate(v, Math.PI / 2);
+}
+
+
+class SolidLine{
+    a: PhysPoint;
+    b: PhysPoint;
+    normal: IVector;
+    sects: {pos:IVector, obj: SolidLine}[];
+    constructor(){
+        this.a;
+        this.b;
+        this.sects = [];
+    }
+
+    step(lines: Array<SolidLine>){
+        this.normal = getNormal(this.a.pos, this.b.pos);
+        this.sects = [];
+        lines.forEach(other =>{
+            if (other == this) {
+                return;
+            }
+            const pos = solveCutted(this.a.pos, this.b.pos, other.a.pos, other.b.pos);
+            if (pos){
+                this.sects.push({
+                    pos,
+                    obj: other
+                });
+            }
+        });
+    }
+
+    render(ctx: CanvasRenderingContext2D){
+        ctx.strokeStyle = '#9f0';
+        ctx.beginPath();
+        ctx.moveTo(this.a.pos.x, this.a.pos.y);
+        ctx.lineTo(this.b.pos.x, this.b.pos.y);
+        ctx.stroke();
+
+        this.sects.forEach(_it=>{
+            const it = _it.pos;
+            ctx.strokeStyle = '#f0f';
+            ctx.fillStyle = '#00f';
+            ctx.beginPath();
+            ctx.ellipse(it.x, it.y, 4, 4, 0 ,0, Math.PI*2);
+            ctx.stroke();
+            ctx.fillRect(it.x-1, it.y-1, 2, 2);
+        });
+
+        const centerPoint = {
+            x: (this.a.pos.x + this.b.pos.x) / 2,
+            y: (this.a.pos.y + this.b.pos.y) / 2,
+        }
+        ctx.strokeStyle = '#407';
+        ctx.beginPath();
+        ctx.moveTo(centerPoint.x, centerPoint.y);
+        ctx.lineTo(centerPoint.x + this.normal.x * 10, centerPoint.y + this.normal.y * 10);
+        ctx.stroke();
+    }
+}
 
 class PhysPoint{
     pos: IVector;
@@ -42,7 +114,7 @@ class PhysJoint{
         this.friction = 0.9999;
     }
 
-    step(){
+    step(lines: SolidLine[]){
         const nextDist = Math.hypot(this.a.pos.x - this.b.pos.x, this.a.pos.y - this.b.pos.y);
         const nextPoint = this.b;
         const curDist = this.targetLength
@@ -59,6 +131,40 @@ class PhysJoint{
 
         this.b.vel.x = this.b.vel.x *this.friction - (dir.x/ strength)*this.a.mass / (this.a.mass + this.b.mass);
         this.b.vel.y = this.b.vel.y *this.friction - (dir.y /strength)*this.a.mass / (this.a.mass + this.b.mass); 
+
+        this.solidStep(lines); // works bad
+    }
+
+    solidStep(lines:SolidLine[]){
+        const solid = new SolidLine();
+        solid.a = this.a;
+        solid.b = this.b;
+        solid.step(lines);
+        if (solid.sects.length){
+            [solid.a, solid.b].forEach(p=>{
+                const speed = p.vel;
+                const mnorm = solid.sects.reduce((acc, sc)=>{
+                    const nn = {
+                        x: (acc.x + sc.obj.normal.x) /2, 
+                        y: (acc.y + sc.obj.normal.y) /2, 
+                    }
+                    const len = Math.hypot(nn.x, nn.y);
+
+                    return {x:nn.x/len, y: nn.y/len}
+                }, solid.sects[0].obj.normal);
+                const norm = mnorm;//solid.sects[0].obj.normal
+                const dot = norm.x*speed.x + norm.y*speed.y;
+                const reflected = {
+                    x: speed.x - (norm.x * 2 * dot),
+                    y: speed.y - (norm.y * 2 * dot),
+                }
+                //speed = reflected;
+        
+                p.vel.x = reflected.x *0.995 ;
+                p.vel.y = reflected.y *0.995;
+                p.step();
+            })
+        }
     }
 
     render(ctx: CanvasRenderingContext2D){
@@ -77,8 +183,35 @@ export class CanvasView{
 
     physPoints: PhysPoint[] = [];
     physJoints: PhysJoint[] = [];
+    solidLines: SolidLine[] = [];
 
     constructor(canvas: HTMLCanvasElement){
+        /*const solid = new SolidLine();
+        solid.b = new PhysPoint();
+        solid.b.pos = {x: 0, y: 500}
+        solid.a = new PhysPoint();
+        solid.a.pos = {x: 800, y: 300}
+        this.solidLines.push(solid);
+
+        const solid2 = new SolidLine();
+        solid2.b = new PhysPoint();
+        solid2.b.pos = {x: 0, y: 50}
+        solid2.a = new PhysPoint();
+        solid2.a.pos = {x: 30, y: 500}
+        this.solidLines.push(solid2);*/
+
+        const mapPoints = [{x: 0, y:200}, {x:200, y:200}, {x:200, y: 400}, {x:600, y:400}, {x:600, y: 200}, {x:800, y: 200}];
+        mapPoints.forEach((it, i)=>{
+            if (i==0){
+                return;
+            }
+            const solid = new SolidLine();
+            solid.b = new PhysPoint();
+            solid.b.pos = it;
+            solid.a = new PhysPoint();
+            solid.a.pos = mapPoints[i-1];
+            this.solidLines.push(solid);
+        })
         //const points:IVector[] = [];
         //const joints: {a:IVector, b:IVector}[] = [];
         let hoveredPoint: IVector = null;
@@ -135,8 +268,11 @@ export class CanvasView{
                 this.physPoints.forEach(it=>{
                     it.vel.y+=0.0001;
                 });
-                this.physJoints.forEach(it=>it.step());
+                this.physJoints.forEach(it=>it.step(this.solidLines));
                 this.physPoints.forEach(it=>it.step());
+                this.solidLines.forEach(it=>it.step([]));
+            } else {
+                this.solidLines.forEach(it=>it.step([]));
             }
         }
 
@@ -147,6 +283,7 @@ export class CanvasView{
     
         const draw = ()=>{
             if (this.isEditMode){
+                this.solidLines.forEach(it=>it.render(ctx));
                 this.joints.forEach((joint)=>{
                     ctx.strokeStyle = '#9f0';
                     ctx.lineWidth = 1;
@@ -174,6 +311,7 @@ export class CanvasView{
             } else {
                 this.physJoints.forEach(it=>it.render(ctx));
                 this.physPoints.forEach(it=>it.render(ctx));
+                this.solidLines.forEach(it=>it.render(ctx));
             }
         }
 
