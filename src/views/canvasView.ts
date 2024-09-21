@@ -77,6 +77,7 @@ class PhysPoint{
     vel: IVector;
     acc: IVector;
     mass: number;
+    nograv: boolean = false;
 
     constructor(){
         this.pos = {x: 0, y:0};
@@ -178,7 +179,7 @@ class PhysJoint{
 export class CanvasView{
     isEditMode: boolean = true;
 
-    points: IVector[] = [];
+    points: (IVector & {st?: boolean})[] = [];
     joints: {a:IVector, b:IVector}[] = [];
 
     physPoints: PhysPoint[] = [];
@@ -199,7 +200,10 @@ export class CanvasView{
         solid2.a = new PhysPoint();
         solid2.a.pos = {x: 30, y: 500}
         this.solidLines.push(solid2);*/
-
+        const stp = [{x: 210, y:200}, {x: 270, y:200}, {x:590, y:200}, {x:520, y:200} , {x:400, y:20}];
+        stp.forEach(it=>{
+            this.points.push({...it, st: true});
+        })
         const mapPoints = [{x: 0, y:200}, {x:200, y:200}, {x:200, y: 400}, {x:600, y:400}, {x:600, y: 200}, {x:800, y: 200}];
         mapPoints.forEach((it, i)=>{
             if (i==0){
@@ -266,7 +270,9 @@ export class CanvasView{
         const calcStep = ()=>{
             if (!this.isEditMode){
                 this.physPoints.forEach(it=>{
-                    it.vel.y+=0.0001;
+                    if (!it.nograv){
+                        it.vel.y+=0.0001;
+                    }
                 });
                 this.physJoints.forEach(it=>it.step(this.solidLines));
                 this.physPoints.forEach(it=>it.step());
@@ -293,7 +299,7 @@ export class CanvasView{
                     ctx.stroke();
                 });
                 this.points.forEach((point)=>{
-                    ctx.fillStyle = '#f0f';
+                    ctx.fillStyle = point.st ? '#ff0': '#f0f';
                     ctx.fillRect(point.x-3, point.y-3, 6, 6);
                 })
                 if (hoveredPoint){
@@ -333,6 +339,10 @@ export class CanvasView{
         this.isEditMode = false;
         this.physPoints = this.points.map(p=>{
             const point = new PhysPoint();
+            if (p.st){
+                point.nograv = true;
+                point.mass = 9999999;
+            }
             point.pos = {...p}
             return point;
         });
