@@ -115,6 +115,10 @@ class PhysJoint{
         this.friction = 0.9999;
     }
 
+    getCurrentLength(){
+        return Math.hypot(this.a.pos.x - this.b.pos.x, this.a.pos.y - this.b.pos.y);
+    }
+
     step(lines: SolidLine[]){
         const nextDist = Math.hypot(this.a.pos.x - this.b.pos.x, this.a.pos.y - this.b.pos.y);
         const nextPoint = this.b;
@@ -142,6 +146,7 @@ class PhysJoint{
         solid.b = this.b;
         solid.step(lines);
         if (solid.sects.length){
+           //solid.sects.length > 1 &&console.log(solid.sects.length);
             [solid.a, solid.b].forEach(p=>{
                 const speed = p.vel;
                 const mnorm = solid.sects.reduce((acc, sc)=>{
@@ -150,7 +155,8 @@ class PhysJoint{
                         y: (acc.y + sc.obj.normal.y) /2, 
                     }
                     const len = Math.hypot(nn.x, nn.y);
-
+                   // (len <1) && console.log({x:nn.x/len, y: nn.y/len}, len,  Math.hypot(nn.x/len, nn.y/len));
+                    //(len ==1) && console.log('shit');
                     return {x:nn.x/len, y: nn.y/len}
                 }, solid.sects[0].obj.normal);
                 const norm = mnorm;//solid.sects[0].obj.normal
@@ -204,7 +210,7 @@ export class CanvasView{
         stp.forEach(it=>{
             this.points.push({...it, st: true});
         })
-        const mapPoints = [{x: 0, y:200}, {x:200, y:200}, {x:200, y: 400}, {x:600, y:400}, {x:600, y: 200}, {x:800, y: 200}];
+        const mapPoints = [{x: 0, y:200}, {x:200, y:200}, {x:200, y: 400}, {x:600, y:400}, {x:600, y: 200}, {x:800, y: 200}/*, {x:602, y: 198} , {x:607, y: 195},  {x:800, y: 195}*/];
         mapPoints.forEach((it, i)=>{
             if (i==0){
                 return;
@@ -316,6 +322,44 @@ export class CanvasView{
                 }
             } else {
                 this.physJoints.forEach(it=>it.render(ctx));
+
+                const allowDestroy = true;
+                const allowSplit = true;
+                if (allowDestroy){
+                    const addPoints:PhysPoint[] = [];
+                    const addJoints:PhysJoint[] = [];
+                    this.physJoints = this.physJoints.filter(it=>{
+                        if (it.getCurrentLength() - it.targetLength > 15){
+                            if (allowSplit){
+                                const p = new PhysPoint();
+                                p.pos = {x: (it.a.pos.x + it.b.pos.x) /2 , y:(it.a.pos.y + it.b.pos.y) /2};
+                                const p1 = new PhysPoint();
+                                p1.pos = {...p.pos};
+                                addPoints.push(p);
+                                addPoints.push(p1);
+                                const joint = new PhysJoint();
+                                joint.a = it.a;
+                                joint.b = p;
+                                joint.targetLength =  it.targetLength /2;//Math.hypot(it.a.pos.x - p.pos.x, it.a.pos.y - p.pos.y) ;
+                                joint.strength = 10;
+                                const joint1 = new PhysJoint();
+                                joint1.a = it.b;
+                                joint1.b = p1;
+                                joint1.targetLength =  it.targetLength /2;//Math.hypot(it.b.pos.x - p1.pos.x, it.b.pos.y - p1.pos.y);
+                                joint1.strength = 10;
+                                addJoints.push(joint);
+                                addJoints.push(joint1);
+                            }
+                            return false;
+                        }
+                        
+                        return true;
+                    });
+                    if (allowSplit){
+                        addPoints.forEach(it=>this.physPoints.push(it));
+                        addJoints.forEach(it=>this.physJoints.push(it));
+                    }
+                }
                 this.physPoints.forEach(it=>it.render(ctx));
                 this.solidLines.forEach(it=>it.render(ctx));
             }

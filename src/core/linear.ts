@@ -19,12 +19,25 @@ export function getEquation(v1: IVector, v2:IVector){
     let b = -(v1.x*k-v1.y);
     return {k, b}
 }
-function inBox(x1: number, y1: number, x2: number, y2:number, x3: number, y3:number) {
+/*function inBox(x1: number, y1: number, x2: number, y2:number, x3: number, y3:number) {
     let n = 0;
     var bou = ((x3 <= x1 + n) && (x3 > x2 - n) && (y3 <= y1 + n) && (y3 > y2 - n) ||
         (x3 > x1 - n) && (x3 <= x2 + n) && (y3 <= y1 + n) && (y3 > y2 - n) ||
         (x3 <= x1 + n) && (x3 > x2 - n) && (y3 > y1 - n) && (y3 <= y2 + n) ||
         (x3 > x1 - n) && (x3 <= x2 + n) && (y3 > y1 - n) && (y3 <= y2 + n));
+    return bou;
+}*/
+
+function inBox(x1: number, y1: number, x2: number, y2:number, x3: number, y3:number) {
+    let n = 0;
+    const minx = Math.min(x1, x2);
+    const maxx = Math.max(x1, x2);
+    const miny = Math.min(y1, y2);
+    const maxy = Math.max(y1, y2);
+    var bou = (
+        x3 <= maxx && x3 >= minx && y3 <= maxy && y3 >= miny
+        //x3 < maxx && x3 > minx && y3 < maxy && y3 > miny
+    )
     return bou;
 }
 
