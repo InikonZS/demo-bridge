@@ -86,13 +86,41 @@ class PhysPoint{
         this.mass = 1;
     }
 
-    step(){
+    step(lines?: SolidLine[]){
         this.pos.x = this.pos.x + this.vel.x;
         this.pos.y = this.pos.y + this.vel.y;
-        if (this.pos.y> 590){
+        /*if (this.pos.y> 590){
             this.pos.y = 590;
             this.vel.y = -this.vel.y * 0.99995;
+        }*/
+       if (lines){
+        this.solidStep(lines);
+       }
+    }
+
+    solidStep(lines: SolidLine[]){
+        const lastPoint = new PhysPoint();
+        lastPoint.pos = {
+            x: this.pos.x - this.vel.x,
+            y: this.pos.y - this.vel.y
         }
+        const solid = new SolidLine();
+        solid.a = lastPoint;
+        solid.b = this;
+        solid.step(lines);
+        if (!solid.sects.length){
+            return;
+        }
+        const norm = solid.sects[0].obj.normal
+        const speed = this.vel;
+        const dot = norm.x*speed.x + norm.y*speed.y;
+        const reflected = {
+            x: speed.x - (norm.x * 2 * dot) * 0.999995,
+            y: speed.y - (norm.y * 2 * dot) * 0.999995,
+        }
+        this.pos.x = solid.sects[0].pos.x + reflected.x;
+        this.pos.y = solid.sects[0].pos.y + reflected.y;
+        this.vel = reflected;
     }
 
     render(ctx: CanvasRenderingContext2D){
@@ -137,7 +165,7 @@ class PhysJoint{
         this.b.vel.x = this.b.vel.x *this.friction - (dir.x/ strength)*this.a.mass / (this.a.mass + this.b.mass);
         this.b.vel.y = this.b.vel.y *this.friction - (dir.y /strength)*this.a.mass / (this.a.mass + this.b.mass); 
 
-        this.solidStep(lines); // works bad
+       // this.solidStep(lines); // works bad
     }
 
     solidStep(lines:SolidLine[]){
@@ -210,7 +238,7 @@ export class CanvasView{
         stp.forEach(it=>{
             this.points.push({...it, st: true});
         })
-        const mapPoints = [{x: 0, y:200}, {x:200, y:200}, {x:200, y: 400}, {x:600, y:400}, {x:600, y: 200}, {x:800, y: 200}/*, {x:602, y: 198} , {x:607, y: 195},  {x:800, y: 195}*/];
+        const mapPoints = [{x: 0, y:200}, {x:200, y:200}, {x:200, y: 400}, {x:600, y:400}, {x:600, y: 200}, {x:800, y: 150}/*, {x:602, y: 198} , {x:607, y: 195},  {x:800, y: 195}*/];
         mapPoints.forEach((it, i)=>{
             if (i==0){
                 return;
@@ -259,6 +287,16 @@ export class CanvasView{
                     y: e.offsetY
                 }
             }
+
+            if (!this.isEditMode){
+                this.physPoints.forEach(it=>{
+                    if (!it.nograv){
+                        const dist = Math.hypot(it.pos.x - e.offsetX, it.pos.y - e.offsetY);
+                        it.vel.x+=Math.sign(it.pos.x - e.offsetX)*Math.min(10/(dist*dist), 0.1);
+                        it.vel.y+=Math.sign(it.pos.y - e.offsetY)*Math.min(10/(dist*dist), 0.1);
+                    }
+                });
+            }
         }
     
         canvas.onmouseup = (e)=>{
@@ -281,7 +319,7 @@ export class CanvasView{
                     }
                 });
                 this.physJoints.forEach(it=>it.step(this.solidLines));
-                this.physPoints.forEach(it=>it.step());
+                this.physPoints.forEach(it=>it.step(this.solidLines));
                 this.solidLines.forEach(it=>it.step([]));
             } else {
                 this.solidLines.forEach(it=>it.step([]));
@@ -329,8 +367,8 @@ export class CanvasView{
                     const addPoints:PhysPoint[] = [];
                     const addJoints:PhysJoint[] = [];
                     this.physJoints = this.physJoints.filter(it=>{
-                        if (it.getCurrentLength() - it.targetLength > 15){
-                            if (allowSplit){
+                        if (it.getCurrentLength() - it.targetLength > 25){
+                            if (allowSplit && it.targetLength>30){
                                 const p = new PhysPoint();
                                 p.pos = {x: (it.a.pos.x + it.b.pos.x) /2 , y:(it.a.pos.y + it.b.pos.y) /2};
                                 const p1 = new PhysPoint();
