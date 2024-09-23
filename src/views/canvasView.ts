@@ -212,6 +212,7 @@ class PhysJoint{
 }
 export class CanvasView{
     isEditMode: boolean = true;
+    tool: string = 'joint';
 
     points: (IVector & {st?: boolean})[] = [];
     joints: {a:IVector, b:IVector}[] = [];
@@ -234,7 +235,7 @@ export class CanvasView{
         solid2.a = new PhysPoint();
         solid2.a.pos = {x: 30, y: 500}
         this.solidLines.push(solid2);*/
-        const stp = [{x: 210, y:200}, {x: 270, y:200}, {x:590, y:200}, {x:520, y:200} , {x:400, y:20}];
+        const stp = [{x: 20, y:180}, {x: 210, y:200}, {x: 270, y:200}, {x:590, y:200}, {x:520, y:200} , {x:400, y:20}, {x: 780, y:140}];
         stp.forEach(it=>{
             this.points.push({...it, st: true});
         })
@@ -261,15 +262,20 @@ export class CanvasView{
         canvas.width = 800;
         canvas.height = 600;
         canvas.onmousedown = (e)=>{
-            if (hoveredPoint){
-                downPoint = hoveredPoint
-            } else {
-                downPoint = {
-                    x: e.offsetX,
-                    y: e.offsetY
+            if (this.tool == 'joint'){
+                if (hoveredPoint){
+                    downPoint = hoveredPoint
+                } else {
+                    downPoint = {
+                        x: e.offsetX,
+                        y: e.offsetY
+                    }
                 }
+                movePoint = {...downPoint}
+            } else if (this.tool == 'remove'){
+                this.points = this.points.filter(it=>it!=hoveredPoint);
+                this.joints = this.joints.filter(it=> it.a != hoveredPoint && it.b != hoveredPoint);
             }
-            movePoint = {...downPoint}
         }
 
         canvas.onmousemove = (e)=>{
@@ -300,15 +306,24 @@ export class CanvasView{
         }
     
         canvas.onmouseup = (e)=>{
-            if (!this.points.includes(downPoint)){
-                this.points.push(downPoint);
+            if (this.tool == 'joint'){
+                if (downPoint.x == movePoint.x && downPoint.y == movePoint.y){
+                    downPoint = null;
+                    movePoint = null;
+                    return;
+                }
+                if (!this.points.includes(downPoint)){
+                    this.points.push(downPoint);
+                }
+                if (!this.points.includes(movePoint)){
+                    this.points.push(movePoint);
+                }
+                this.joints.push({a: downPoint, b: movePoint});
+                downPoint = null;
+                movePoint = null;
+            } else {
+                hoveredPoint = null;
             }
-            if (!this.points.includes(movePoint)){
-                this.points.push(movePoint);
-            }
-            this.joints.push({a: downPoint, b: movePoint});
-            downPoint = null;
-            movePoint = null;
         }
 
         const calcStep = ()=>{
@@ -335,6 +350,9 @@ export class CanvasView{
             if (this.isEditMode){
                 this.solidLines.forEach(it=>it.render(ctx));
                 this.joints.forEach((joint)=>{
+                    if (!(joint.a && joint.b)){
+                        return;
+                    }
                     ctx.strokeStyle = '#9f0';
                     ctx.lineWidth = 1;
                     ctx.beginPath();
@@ -437,6 +455,10 @@ export class CanvasView{
             joint.strength = 10;
             return joint;
         });
+    }
+
+    setTool(tool: string){
+        this.tool = tool;
     }
 
     toEditMode(){
