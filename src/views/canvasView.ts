@@ -140,7 +140,7 @@ class PhysJoint{
         this.b;
         this.targetLength = 150;
         this.strength = 1;
-        this.friction = 0.9999;
+        this.friction = 0.9999;//99;
     }
 
     getCurrentLength(){
@@ -215,6 +215,7 @@ export class CanvasView{
     tool: string = 'joint';
 
     points: (IVector & {st?: boolean})[] = [];
+    ropes: {a:IVector, b:IVector}[] =[];
     joints: {a:IVector, b:IVector}[] = [];
 
     physPoints: PhysPoint[] = [];
@@ -262,7 +263,7 @@ export class CanvasView{
         canvas.width = 800;
         canvas.height = 600;
         canvas.onmousedown = (e)=>{
-            if (this.tool == 'joint'){
+            if (this.tool == 'joint' || this.tool == 'rope'){
                 if (hoveredPoint){
                     downPoint = hoveredPoint
                 } else {
@@ -306,7 +307,7 @@ export class CanvasView{
         }
     
         canvas.onmouseup = (e)=>{
-            if (this.tool == 'joint'){
+            if (this.tool == 'joint' || this.tool == 'rope'){
                 if (downPoint.x == movePoint.x && downPoint.y == movePoint.y){
                     downPoint = null;
                     movePoint = null;
@@ -318,7 +319,11 @@ export class CanvasView{
                 if (!this.points.includes(movePoint)){
                     this.points.push(movePoint);
                 }
-                this.joints.push({a: downPoint, b: movePoint});
+                if (this.tool == 'rope'){
+                    this.ropes.push({a: downPoint, b: movePoint});
+                } else {
+                    this.joints.push({a: downPoint, b: movePoint});
+                }
                 downPoint = null;
                 movePoint = null;
             } else {
@@ -455,6 +460,44 @@ export class CanvasView{
             joint.strength = 10;
             return joint;
         });
+
+        this.ropes.forEach(rope=>{
+            const ropeLen = Math.hypot(rope.a.x - rope.b.x, rope.a.y - rope.b.y);
+            const ropePoints = [];
+            const sclen = 20;
+            for (let i = 0; i< (ropeLen / sclen); i++){
+                if (i==0){
+                    //ropePoints.push(rope.a);
+                } else {
+                    ropePoints.push({
+                        x: rope.a.x - (rope.a.x - rope.b.x) / ropeLen * i * sclen,
+                        y: rope.a.y - (rope.a.y - rope.b.y) / ropeLen * i * sclen,
+                    });
+                }
+            }
+            //ropePoints.push(rope.b);
+            let lastPoint: PhysPoint = this.physPoints.find(it=> it.pos.x == rope.a.x &&  it.pos.y == rope.a.y);
+            ropePoints.forEach((it, i)=>{
+                const point = new PhysPoint();
+                point.pos = {...it}
+                point.mass = 0.01;
+                this.physPoints.push(point);
+                const joint = new PhysJoint();
+                joint.a = point;
+                joint.b = lastPoint;
+                joint.targetLength =  Math.hypot(point.pos.x - lastPoint.pos.x, point.pos.y - lastPoint.pos.y);
+                joint.strength = 0.01;
+                this.physJoints.push(joint);
+                lastPoint = point;
+            });
+            let endPoint: PhysPoint = this.physPoints.find(it=> it.pos.x == rope.b.x &&  it.pos.y == rope.b.y);
+            const joint = new PhysJoint();
+            joint.a = endPoint;
+            joint.b = lastPoint;
+            joint.targetLength =  Math.hypot(endPoint.pos.x - lastPoint.pos.x, endPoint.pos.y - lastPoint.pos.y);
+            joint.strength = 0.01;
+            this.physJoints.push(joint);
+        })
     }
 
     setTool(tool: string){
