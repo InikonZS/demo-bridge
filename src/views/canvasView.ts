@@ -1,5 +1,6 @@
 import { IVector } from "../core/IVector";
 import { solveCutted } from "../core/linear";
+import { Grid } from "./grid";
 
 function rotate(v: IVector, ang: number){
     return {x: v.x * Math.cos(ang) + v.y * Math.sin(ang), y: v.y * Math.cos(ang) - v.x * Math.sin(ang)}
@@ -221,8 +222,10 @@ export class CanvasView{
     physPoints: PhysPoint[] = [];
     physJoints: PhysJoint[] = [];
     solidLines: SolidLine[] = [];
+    grid: Grid;
 
     constructor(canvas: HTMLCanvasElement){
+        this.grid = new Grid();
         /*const solid = new SolidLine();
         solid.b = new PhysPoint();
         solid.b.pos = {x: 0, y: 500}
@@ -262,6 +265,9 @@ export class CanvasView{
         let movePoint: IVector = null;
         canvas.width = 800;
         canvas.height = 600;
+        const roundGrid = (x: number)=>{
+            return Math.round(x / 10) *10;
+        }
         canvas.onmousedown = (e)=>{
             if (this.tool == 'joint' || this.tool == 'rope'){
                 if (hoveredPoint){
@@ -290,8 +296,8 @@ export class CanvasView{
                 movePoint = hoveredPoint
             } else {
                 movePoint = {
-                    x: e.offsetX,
-                    y: e.offsetY
+                    x: roundGrid(e.offsetX),
+                    y: roundGrid(e.offsetY)
                 }
             }
 
@@ -353,6 +359,7 @@ export class CanvasView{
     
         const draw = ()=>{
             if (this.isEditMode){
+                this.grid.render(ctx);
                 this.solidLines.forEach(it=>it.render(ctx));
                 this.joints.forEach((joint)=>{
                     if (!(joint.a && joint.b)){
