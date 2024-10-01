@@ -1,6 +1,7 @@
 import { IVector } from "../core/IVector";
 import { solveCutted } from "../core/linear";
 import { Grid } from "./grid";
+import { drawSling } from "./drawSling";
 
 function rotate(v: IVector, ang: number){
     return {x: v.x * Math.cos(ang) + v.y * Math.sin(ang), y: v.y * Math.cos(ang) - v.x * Math.sin(ang)}
@@ -204,11 +205,13 @@ class PhysJoint{
     }
 
     render(ctx: CanvasRenderingContext2D){
+        drawSling(ctx, this.a.pos, this.b.pos, this.targetLength, 5);
         ctx.strokeStyle = '#f90';
         ctx.beginPath();
         ctx.moveTo(this.a.pos.x, this.a.pos.y);
         ctx.lineTo(this.b.pos.x, this.b.pos.y);
         ctx.stroke();
+
     }
 }
 export class CanvasView{
@@ -225,6 +228,8 @@ export class CanvasView{
     grid: Grid;
 
     constructor(canvas: HTMLCanvasElement){
+        //canvas.style.width = canvas.width / window.devicePixelRatio +'px';
+        //canvas.style.height = canvas.height / window.devicePixelRatio +'px';
         this.grid = new Grid();
         /*const solid = new SolidLine();
         solid.b = new PhysPoint();
@@ -274,8 +279,8 @@ export class CanvasView{
                     downPoint = hoveredPoint
                 } else {
                     downPoint = {
-                        x: e.offsetX,
-                        y: e.offsetY
+                        x: roundGrid(e.offsetX),
+                        y: roundGrid(e.offsetY)
                     }
                 }
                 movePoint = {...downPoint}
@@ -356,10 +361,37 @@ export class CanvasView{
             ctx.fillStyle = '#00000020';
             ctx.fillRect(0,0,ctx.canvas.width, ctx.canvas.height);
         }
-    
+        
+        let tpa = -40;
         const draw = ()=>{
             if (this.isEditMode){
                 this.grid.render(ctx);
+                tpa+=0.0003;
+                //drawSling(ctx, {x:330, y:310}, {x:300 *Math.sin(tpa), y:190* Math.cos(tpa)}, 200, 10);
+                /*const spoint = {x:100, y:110}
+                const tpoint = {x:200 + tpa, y:110}
+                const mpoint = {x: (spoint.x + tpoint.x) / 2, y: (spoint.y + tpoint.y) / 2}
+                const jdist = Math.hypot(spoint.x - tpoint.x, spoint.y - tpoint.y);
+                let dk = (jdist - 100) / 10;
+                let df = 0;
+                if (dk>20*0.7){
+                    df = Math.max((20*0.7 - dk)*20, -jdist / 3);
+                    dk = 20*0.7
+                }
+
+                tpa+=0.03;
+                ctx.strokeStyle = '#f00';
+                ctx.fillStyle = '#400';
+                ctx.beginPath();
+                ctx.moveTo(100,100);
+                ctx.bezierCurveTo(mpoint.x +df, 100+ dk, mpoint.x-df, 100 + dk, tpoint.x, 100);
+                ctx.bezierCurveTo(tpoint.x + 20 * 0.7, 100 +5, tpoint.x + 20* 0.7, 120 - 5, tpoint.x, 120);
+                //ctx.moveTo(100,120);
+                ctx.bezierCurveTo(mpoint.x-df, 120 -dk, mpoint.x + df, 120 -dk,100, 120);
+                ctx.bezierCurveTo(100 - 20 * 0.7, 120 -5, 100 - 20* 0.7, 100 + 5, 100, 100);
+                ctx.fill();
+                ctx.stroke();
+                */
                 this.solidLines.forEach(it=>it.render(ctx));
                 this.joints.forEach((joint)=>{
                     if (!(joint.a && joint.b)){

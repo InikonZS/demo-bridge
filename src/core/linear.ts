@@ -45,7 +45,7 @@ function inBoxLine(v1: IVector,v2: IVector, nv: IVector){
     return inBox(v1.x, v1.y, v2.x, v2.y, nv.x, nv.y)
 }
 
-function rotate(v: IVector, ang: number){
+export function rotate(v: IVector, ang: number){
     return {x: v.x * Math.cos(ang) + v.y * Math.sin(ang), y: v.y * Math.cos(ang) - v.x * Math.sin(ang)}
 }
 
