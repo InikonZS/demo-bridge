@@ -228,8 +228,9 @@ export class CanvasView{
     grid: Grid;
 
     constructor(canvas: HTMLCanvasElement){
-        //canvas.style.width = canvas.width / window.devicePixelRatio +'px';
-        //canvas.style.height = canvas.height / window.devicePixelRatio +'px';
+        canvas.style.width = canvas.width / window.devicePixelRatio +'px';
+        canvas.style.height = canvas.height / window.devicePixelRatio +'px';
+        const clickScale =  canvas.width/ canvas.getBoundingClientRect().width ;
         this.grid = new Grid();
         /*const solid = new SolidLine();
         solid.b = new PhysPoint();
@@ -274,13 +275,14 @@ export class CanvasView{
             return Math.round(x / 10) *10;
         }
         canvas.onmousedown = (e)=>{
+            const mpos = {x: e.offsetX * clickScale, y: e.offsetY * clickScale};
             if (this.tool == 'joint' || this.tool == 'rope'){
                 if (hoveredPoint){
                     downPoint = hoveredPoint
                 } else {
                     downPoint = {
-                        x: roundGrid(e.offsetX),
-                        y: roundGrid(e.offsetY)
+                        x: roundGrid(mpos.x),
+                        y: roundGrid(mpos.y)
                     }
                 }
                 movePoint = {...downPoint}
@@ -292,8 +294,9 @@ export class CanvasView{
 
         canvas.onmousemove = (e)=>{
             hoveredPoint = null;
+            const mpos = {x: e.offsetX * clickScale, y: e.offsetY * clickScale};
             this.points.forEach(it=>{
-                if (Math.hypot(it.x - e.offsetX, it.y - e.offsetY)<10){
+                if (Math.hypot(it.x - mpos.x, it.y - mpos.y)<10){
                     hoveredPoint = it;
                 }
             });
@@ -301,17 +304,17 @@ export class CanvasView{
                 movePoint = hoveredPoint
             } else {
                 movePoint = {
-                    x: roundGrid(e.offsetX),
-                    y: roundGrid(e.offsetY)
+                    x: roundGrid(mpos.x),
+                    y: roundGrid(mpos.y)
                 }
             }
 
             if (!this.isEditMode){
                 this.physPoints.forEach(it=>{
                     if (!it.nograv){
-                        const dist = Math.hypot(it.pos.x - e.offsetX, it.pos.y - e.offsetY);
-                        it.vel.x+=Math.sign(it.pos.x - e.offsetX)*Math.min(10/(dist*dist), 0.1);
-                        it.vel.y+=Math.sign(it.pos.y - e.offsetY)*Math.min(10/(dist*dist), 0.1);
+                        const dist = Math.hypot(it.pos.x - mpos.x, it.pos.y - mpos.y);
+                        it.vel.x+=Math.sign(it.pos.x - mpos.x)*Math.min(10/(dist*dist), 0.1);
+                        it.vel.y+=Math.sign(it.pos.y - mpos.y)*Math.min(10/(dist*dist), 0.1);
                     }
                 });
             }
@@ -469,8 +472,8 @@ export class CanvasView{
             clear();
             for (let i=0; i<40; i++){
                 calcStep();
-                draw();
-            }
+                
+            }draw();
             requestAnimationFrame(()=>{
                 render();
             });
