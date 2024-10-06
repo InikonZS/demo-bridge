@@ -9,7 +9,8 @@ export const App = () => {
     const [tool, setTool] = useState('joint');
 
     useEffect(()=>{
-        if (canvasRef.current){
+        if (canvasRef.current && !canvasView){
+            console.log(canvasRef.current, 'found canvas');
             const _canvasView = new CanvasView(canvasRef.current);
             setCanvasView(_canvasView);
         }
