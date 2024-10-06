@@ -10,7 +10,7 @@ import { CanvasSimulateMode } from "./canvasSimulateMode";
 
 export class CanvasView{
     isEditMode: boolean = true;
-    tool: string = 'joint';
+    //tool: string = 'joint';
 
     points: (IVector & {st?: boolean})[] = [];
     ropes: {a:IVector, b:IVector}[] =[];
@@ -22,14 +22,16 @@ export class CanvasView{
     grid: Grid;
     editMode: CanvasEditMode;
     simulateMode: CanvasSimulateMode;
+    ctx: CanvasRenderingContext2D;
 
     constructor(canvas: HTMLCanvasElement){
         const ctx = canvas.getContext("2d");
+        this.ctx = ctx;
         canvas.width = 800;
         canvas.height = 600;
-        canvas.style.width = canvas.width / window.devicePixelRatio +'px';
-        canvas.style.height = canvas.height / window.devicePixelRatio +'px';
-        const clickScale =  canvas.width/ canvas.getBoundingClientRect().width ;
+        //canvas.style.width = canvas.width / window.devicePixelRatio +'px';
+        //canvas.style.height = canvas.height / window.devicePixelRatio +'px';
+        const clickScale =  canvas.width/ canvas.getBoundingClientRect().width;
         this.grid = new Grid();
         this.editMode = new CanvasEditMode(ctx);
         this.editMode.clickScale = clickScale;
@@ -181,12 +183,20 @@ export class CanvasView{
     }
 
     setTool(tool: string){
-        this.tool = tool;
+        //this.tool = tool;
+        this.editMode.tool = tool;
     }
 
     toEditMode(){
         this.isEditMode = true;
         this.simulateMode.resetMode();
         this.editMode.initMode();
+    }
+
+    resize(){
+        const canvas = this.ctx.canvas;
+        const clickScale =  canvas.width/ canvas.getBoundingClientRect().width;
+        this.editMode.clickScale = clickScale;
+        this.simulateMode.clickScale = clickScale;
     }
 }
