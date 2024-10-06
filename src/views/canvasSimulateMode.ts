@@ -16,31 +16,14 @@ export class CanvasSimulateMode {
     }
 
     handleMove = (e: MouseEvent)=>{
-        //this.hoveredPoint = null;
-            const mpos = {x: e.offsetX * this.clickScale, y: e.offsetY * this.clickScale};
-            /*this.points.forEach(it=>{
-                if (Math.hypot(it.x - mpos.x, it.y - mpos.y)<10){
-                    hoveredPoint = it;
-                }
-            });
-            if (hoveredPoint){
-                movePoint = hoveredPoint
-            } else {
-                movePoint = {
-                    x: roundGrid(mpos.x),
-                    y: roundGrid(mpos.y)
-                }
-            }*/
-
-           // if (!this.isEditMode){
-                this.physPoints.forEach(it=>{
-                    if (!it.nograv){
-                        const dist = Math.hypot(it.pos.x - mpos.x, it.pos.y - mpos.y);
-                        it.vel.x+=Math.sign(it.pos.x - mpos.x)*Math.min(10/(dist*dist), 0.1);
-                        it.vel.y+=Math.sign(it.pos.y - mpos.y)*Math.min(10/(dist*dist), 0.1);
-                    }
-                });
-            //}
+        const mpos = {x: e.offsetX * this.clickScale, y: e.offsetY * this.clickScale};
+        this.physPoints.forEach(it=>{
+            if (!it.nograv){
+                const dist = Math.hypot(it.pos.x - mpos.x, it.pos.y - mpos.y);
+                it.vel.x+=Math.sign(it.pos.x - mpos.x)*Math.min(10/(dist*dist), 0.1);
+                it.vel.y+=Math.sign(it.pos.y - mpos.y)*Math.min(10/(dist*dist), 0.1);
+            }
+        });
     }
 
     initMode(){
