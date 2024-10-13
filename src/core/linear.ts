@@ -1,5 +1,14 @@
 import { IVector } from "./IVector";
 
+export const getNormal = (v1: IVector, v2: IVector)=>{
+    const len = Math.hypot(v1.x - v2.x, v1.y - v2.y)
+    const v = {
+        x: (v1.x - v2.x) / len,
+        y: (v1.y - v2.y) / len
+    };
+    return rotate(v, Math.PI / 2);
+}
+
 export function getAngle(_a: IVector, _b: IVector, c: IVector){
     const a = {x: _a.x - c.x, y: _a.y - c.y}
     const b = {x: _b.x - c.x, y: _b.y - c.y}

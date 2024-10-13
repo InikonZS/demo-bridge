@@ -1,3 +1,76 @@
 *{
     box-sizing: border-box;
 }
+
+body{
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    margin: 0;
+}
+
+.root{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #111;
+    height: 100%;
+}
+
+.main_screen{
+    height: calc(var(--base) * 700);
+    width: calc(var(--base) * 800);
+}
+
+.canvas_wrap{
+    
+}
+
+.canvas{
+    height: calc(var(--base) * 600);
+    width: calc(var(--base) * 800);
+    display: block;
+}
+
+.control_panel{
+    display: flex;
+    padding: 10px;
+    background-color: #222;
+    height: calc(var(--base)* 70);
+    border-radius: 10px;
+    margin: 15px 0px;
+    gap: 5px;
+    justify-content: space-between;
+}
+
+.tools_panel{
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.tool_button{
+    border: 1px solid transparent;
+    background: linear-gradient(45deg, #303030, #555353, #303030);
+    color: #fff;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.run_wrapper{
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.run_button{
+    border: none;
+    background: linear-gradient(45deg, #076500, #5f995c, #076500);
+    color: #fff;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.tool_button_active{
+    border: 1px solid #ccc;
+}
