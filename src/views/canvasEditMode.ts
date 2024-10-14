@@ -3,9 +3,11 @@ import { IVector } from "../core/IVector";
 export class CanvasEditMode {
     ctx: CanvasRenderingContext2D;
     tool: string = 'joint';
-    points: (IVector & { st?: boolean })[] = [];
+    points: (IVector & { st?: boolean, mass?: number})[] = [];
     ropes: { a: IVector, b: IVector }[] = [];
     joints: { a: IVector, b: IVector }[] = [];
+
+    onAction: (name: string, data: any)=>void;
 
     constructor(ctx: CanvasRenderingContext2D) {
         this.ctx = ctx;
@@ -35,6 +37,9 @@ export class CanvasEditMode {
         } else if (this.tool == 'remove') {
             this.points = this.points.filter(it => it != this.hoveredPoint);
             this.joints = this.joints.filter(it => it.a != this.hoveredPoint && it.b != this.hoveredPoint);
+            this.ropes = this.ropes.filter(it => it.a != this.hoveredPoint && it.b != this.hoveredPoint);
+        } else if (this.tool == 'select') {
+            this.onAction?.('select', this.hoveredPoint);
         }
     }
 
@@ -110,6 +115,17 @@ export class CanvasEditMode {
                 return;
             }
             ctx.strokeStyle = '#9f0';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(joint.a.x, joint.a.y);
+            ctx.lineTo(joint.b.x, joint.b.y);
+            ctx.stroke();
+        });
+        this.ropes.forEach((joint)=>{
+            if (!(joint.a && joint.b)){
+                return;
+            }
+            ctx.strokeStyle = '#f90';
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(joint.a.x, joint.a.y);

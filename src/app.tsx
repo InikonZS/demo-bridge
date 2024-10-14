@@ -8,11 +8,19 @@ export const App = () => {
     const [canvasView, setCanvasView] = useState<CanvasView>();
     const [tool, setTool] = useState('joint');
     const [scale, setScale] = useState(1);
+    const [selectedPoint, setSelectedPoint] = useState<any>();
+    const [fix, setFix] = useState(0);
 
     useEffect(()=>{
         if (canvasRef.current && !canvasView){
             console.log(canvasRef.current, 'found canvas');
             const _canvasView = new CanvasView(canvasRef.current);
+            _canvasView.onAction = (name, data)=>{
+                console.log(name, data);
+                if (name == 'select'){
+                    setSelectedPoint(data);
+                }
+            }
             setCanvasView(_canvasView);
         }
     }, [canvasRef.current]);
@@ -69,7 +77,24 @@ export const App = () => {
                 <div className="tools_panel">
                     <button className={`tool_button ${tool == 'joint' ? 'tool_button_active': ''}`} onClick={()=>setTool('joint')}>add joint</button>
                     <button className={`tool_button ${tool == 'rope' ? 'tool_button_active': ''}`} onClick={()=>setTool('rope')}>add rope</button>
+                    <button className={`tool_button ${tool == 'select' ? 'tool_button_active': ''}`} onClick={()=>setTool('select')}>select</button>
                     <button className={`tool_button ${tool == 'remove' ? 'tool_button_active': ''}`} onClick={()=>setTool('remove')}>remove</button>
+                </div>
+                <div>
+                    {tool== 'select' && selectedPoint && <input type="number" value={selectedPoint.mass} onChange={(e)=>{
+                        setSelectedPoint((last: any)=>{
+                            last.mass = e.target.value;
+                            return last;
+                        });
+                        setFix(last=>last+1);
+                    }}/>}
+                    {tool== 'select' && selectedPoint && <input type="checkbox" checked={selectedPoint.st} onChange={(e)=>{
+                        setSelectedPoint((last: any)=>{
+                            last.st = e.target.checked;
+                            return last;
+                        });
+                        setFix(last=>last+1);
+                    }}/>}
                 </div>
                 <div className="run_wrapper">
                     <button className="run_button" onClick={simulate}>run</button>

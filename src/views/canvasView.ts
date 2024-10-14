@@ -12,7 +12,7 @@ export class CanvasView{
     isEditMode: boolean = true;
     //tool: string = 'joint';
 
-    points: (IVector & {st?: boolean})[] = [];
+    points: (IVector & {st?: boolean, mass?: number})[] = [];
     ropes: {a:IVector, b:IVector}[] =[];
     joints: {a:IVector, b:IVector}[] = [];
 
@@ -23,6 +23,7 @@ export class CanvasView{
     editMode: CanvasEditMode;
     simulateMode: CanvasSimulateMode;
     ctx: CanvasRenderingContext2D;
+    onAction: (name: string, data: any)=>void;
 
     constructor(canvas: HTMLCanvasElement){
         const ctx = canvas.getContext("2d");
@@ -36,6 +37,7 @@ export class CanvasView{
         this.editMode = new CanvasEditMode(ctx);
         this.editMode.clickScale = clickScale;
         this.editMode.initMode();
+        this.editMode.onAction = (...arg)=>this.onAction(...arg);
 
         this.simulateMode = new CanvasSimulateMode(ctx);
         this.simulateMode.clickScale = clickScale;
@@ -127,6 +129,10 @@ export class CanvasView{
                 point.mass = 9999999;
             }
             point.pos = {...p}
+            if (p.mass){
+                console.log(p.mass);
+                point.mass = p.mass;
+            }
             return point;
         });
 
